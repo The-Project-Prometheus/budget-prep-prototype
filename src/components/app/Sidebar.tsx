@@ -1,24 +1,25 @@
 'use client'
 
-import type { AppPage } from './AppShell'
-
 interface Props {
-  currentPage: AppPage
-  onNavigate: (p: AppPage) => void
+  currentPage: string
+  onNavigate: (p: string) => void
   onSignOut: () => void
 }
 
-interface NavItem { page: AppPage; icon: string; label: string; badge?: string }
+interface NavItem { page: string; icon: string; label: string; badge?: string; alert?: boolean }
 
 const WORKSPACE: NavItem[] = [
-  { page: 'dashboard', icon: 'pi-chart-pie', label: 'Dashboard' },
-  { page: 'documents', icon: 'pi-file',      label: 'My Documents' },
-  { page: 'legacy',    icon: 'pi-inbox',     label: 'Legacy Records' },
+  { page: 'dashboard', icon: 'pi-chart-pie',  label: 'Dashboard' },
+  { page: 'documents', icon: 'pi-file',        label: 'My Documents' },
+  { page: 'legacy',    icon: 'pi-inbox',       label: 'Legacy Records' },
 ]
-const BUDGET: NavItem[] = [
-  { page: 'allotments',  icon: 'pi-dollar',         label: 'Allotments' },
-  { page: 'obligations', icon: 'pi-file-edit',       label: 'Obligations' },
-  { page: 'saro',        icon: 'pi-bars-progress',   label: 'SARO Routing', badge: '3' },
+const BUDGET_PREP: NavItem[] = [
+  { page: 'sbps-dash',      icon: 'pi-chart-bar',  label: 'Overview' },
+  { page: 'sbps-ppmp',      icon: 'pi-list-check', label: 'PPMP' },
+  { page: 'sbps-sbpf1',     icon: 'pi-file-edit',  label: 'SBPF1 — In PPMP' },
+  { page: 'sbps-sbpf2',     icon: 'pi-file-plus',  label: 'SBPF2 — Non-PPMP' },
+  { page: 'sbps-proposal',  icon: 'pi-book',       label: 'Proposal Summary' },
+  { page: 'sbps-approvals', icon: 'pi-inbox',      label: 'Approvals Inbox', badge: '2', alert: true },
 ]
 const ADMIN: NavItem[] = [
   { page: 'users',    icon: 'pi-users',    label: 'Users' },
@@ -37,9 +38,9 @@ export default function Sidebar({ currentPage, onNavigate, onSignOut }: Props) {
         </div>
       </div>
 
-      <NavGroup label="Workspace" items={WORKSPACE} current={currentPage} onNavigate={onNavigate} />
-      <NavGroup label="Budget"    items={BUDGET}    current={currentPage} onNavigate={onNavigate} />
-      <NavGroup label="Admin Panel" items={ADMIN}   current={currentPage} onNavigate={onNavigate} />
+      <NavGroup label="Workspace"           items={WORKSPACE}   current={currentPage} onNavigate={onNavigate} />
+      <NavGroup label="FY 2027 Budget Prep" items={BUDGET_PREP} current={currentPage} onNavigate={onNavigate} />
+      <NavGroup label="Admin Panel"         items={ADMIN}       current={currentPage} onNavigate={onNavigate} />
 
       <div style={{ flex: 1 }} />
       <div
@@ -55,10 +56,7 @@ export default function Sidebar({ currentPage, onNavigate, onSignOut }: Props) {
 }
 
 function NavGroup({ label, items, current, onNavigate }: {
-  label: string
-  items: NavItem[]
-  current: AppPage
-  onNavigate: (p: AppPage) => void
+  label: string; items: NavItem[]; current: string; onNavigate: (p: string) => void
 }) {
   return (
     <div className="nav-group">
@@ -71,7 +69,11 @@ function NavGroup({ label, items, current, onNavigate }: {
         >
           <i className={`pi ${item.icon}`} />
           {item.label}
-          {item.badge && <span className="nav-badge">{item.badge}</span>}
+          {item.badge && (
+            <span className={`nav-badge${item.alert && current !== item.page ? ' alert' : ''}`}>
+              {item.badge}
+            </span>
+          )}
         </div>
       ))}
     </div>

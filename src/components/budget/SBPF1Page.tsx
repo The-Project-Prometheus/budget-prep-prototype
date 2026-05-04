@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { useToast } from '@/components/ui/Toast'
-import { SBPS_PPMP_ITEMS, accountByCode, ppmpSubtotal, sbpf1Total, peso, pesoSm } from '@/lib/budget-data'
+import { SBPS_PPMP_ITEMS, accountByCode, ppmpSubtotal, sbpf1Total, peso, pesoSm, type PPMPItem } from '@/lib/budget-data'
+import SBPF1EditDrawer from './SBPF1EditDrawer'
 
 export default function SBPF1Page({ onNavigate }: { onNavigate: (p: string) => void }) {
   const toast = useToast()
+  const [editItem, setEditItem] = useState<PPMPItem | null>(null)
   const subTot   = ppmpSubtotal()
   const sbpfTot  = sbpf1Total()
   const matches  = subTot === sbpfTot
@@ -93,13 +96,20 @@ export default function SBPF1Page({ onNavigate }: { onNavigate: (p: string) => v
                   </td>
                 </tr>
                 {g.items.map(i => (
-                  <tr key={i.id}>
+                  <tr key={i.id} onClick={() => setEditItem(i)} style={{ cursor: 'pointer' }}>
                     <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-3)' }}>{i.id}</td>
                     <td>{i.desc}</td>
                     <td className="qty">{i.qty}</td>
                     <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--fg-3)', fontSize: 12 }}>{i.unit}</td>
                     <td className="amt">{pesoSm(i.unit_cost)}</td>
                     <td className="amt">{pesoSm(i.qty * i.unit_cost)}</td>
+                    <td style={{ width: 80 }}>
+                      <div className="row-actions">
+                        <button title="Edit" onClick={e => { e.stopPropagation(); setEditItem(i) }}>
+                          <i className="pi pi-pencil" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </>
@@ -107,7 +117,7 @@ export default function SBPF1Page({ onNavigate }: { onNavigate: (p: string) => v
           </tbody>
           <tfoot>
             <tr style={{ background: 'rgb(var(--primary-900))', color: 'white' }}>
-              <td colSpan={5} style={{ textAlign: 'right', padding: 14, fontFamily: 'var(--font-menu)', fontWeight: 700, fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+              <td colSpan={6} style={{ textAlign: 'right', padding: 14, fontFamily: 'var(--font-menu)', fontWeight: 700, fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase' }}>
                 SBPF1 Total
               </td>
               <td className="amt" style={{ padding: 14, fontSize: 16, color: 'rgb(var(--accent-300))' }}>
@@ -117,6 +127,18 @@ export default function SBPF1Page({ onNavigate }: { onNavigate: (p: string) => v
           </tfoot>
         </table>
       </div>
+
+      {editItem && (
+        <SBPF1EditDrawer
+          item={editItem}
+          onClose={() => setEditItem(null)}
+          onSave={(updated) => {
+            // In a real app, this would update the store; prototype just shows toast
+            toast(`${updated.id} updated.`, 'pi-check-circle')
+            setEditItem(null)
+          }}
+        />
+      )}
     </>
   )
 }

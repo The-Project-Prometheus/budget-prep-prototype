@@ -1,5 +1,6 @@
 export interface Account {
   code: string; name: string; type: 'MOOE' | 'CO' | 'PS'; sub?: string
+  [key: string]: unknown
 }
 
 export interface PPMPItem {

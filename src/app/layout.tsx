@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import 'primeicons/primeicons.css'
 import './globals.css'
 import { ToastProvider } from '@/components/ui/Toast'
 

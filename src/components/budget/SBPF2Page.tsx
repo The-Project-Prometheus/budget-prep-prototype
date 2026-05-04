@@ -1,20 +1,37 @@
 'use client'
 
+import { useState } from 'react'
 import { useToast } from '@/components/ui/Toast'
-import { SBPS_SBPF2_LINES, accountByCode, sbpf2Total, peso, pesoSm } from '@/lib/budget-data'
+import { SBPS_SBPF2_LINES, accountByCode, sbpf2Total, peso, pesoSm, type SBPF2Line } from '@/lib/budget-data'
+import SBPF2EditDrawer from './SBPF2EditDrawer'
 
 const ACCOUNT_HINTS = [
-  ['Alcohol',      '5-02-03-070'],
-  ['Desk Fan',     '5-02-03-210'],
-  ['Laptop',       '1-07-05-030 · flagged for PPS'],
-  ['Toner',        '5-02-03-050'],
-  ['Janitorial',   '5-02-12-010 · centralized'],
-  ['Training',     '5-02-02-010 · HRMS only'],
+  ['Journal / Research',  '5-02-99-010'],
+  ['Foreign Travel',      '5-02-04-020'],
+  ['Conference Dues',     '5-02-99-040'],
+  ['Local Travel',        '5-02-04-010'],
+  ['Janitorial',          '5-02-12-010 · centralized'],
+  ['Training',            '5-02-02-010 · HRMS only'],
 ]
 
 export default function SBPF2Page() {
   const toast = useToast()
-  const total = sbpf2Total()
+  const [lines, setLines]       = useState<SBPF2Line[]>(SBPS_SBPF2_LINES)
+  const [editLine, setEditLine] = useState<SBPF2Line | null | 'new'>( null)
+
+  const total = lines.reduce((s, l) => s + l.amount, 0)
+
+  function handleSave(saved: SBPF2Line) {
+    setLines(prev => {
+      const idx = prev.findIndex(l => l.id === saved.id)
+      if (idx >= 0) { const next = [...prev]; next[idx] = saved; return next }
+      return [...prev, saved]
+    })
+  }
+
+  function handleRemove(id: string) {
+    setLines(prev => prev.filter(l => l.id !== id))
+  }
 
   return (
     <>
@@ -27,7 +44,7 @@ export default function SBPF2Page() {
           <button className="btn secondary" onClick={() => toast('SBPF2 exported.', 'pi-download')}>
             <i className="pi pi-download" /> Export
           </button>
-          <button className="btn primary" onClick={() => toast('Add line — auto-suggest opens.', 'pi-plus')}>
+          <button className="btn primary" onClick={() => setEditLine('new')}>
             <i className="pi pi-plus" /> Add Line
           </button>
         </div>
@@ -37,9 +54,9 @@ export default function SBPF2Page() {
         <i className="pi pi-info-circle" />
         <div>
           <b>What goes in SBPF2?</b>
-          Items / projects that <i>cannot</i> be procurement-planned in advance — subscriptions, honoraria,
-          foreign-mission travel, conference fees. Each line requires a written justification. The system
-          auto-suggests an account code based on your description.
+          Items that <i>cannot</i> be procurement-planned in advance — subscriptions, honoraria,
+          foreign-mission travel, conference fees. Each line requires a written justification.
+          The system auto-suggests an account code from your description.
         </div>
       </div>
 
@@ -51,7 +68,7 @@ export default function SBPF2Page() {
           </div>
           <div style={{ flex: 1 }} />
           <span className="match-badge ok">
-            <i className="pi pi-info-circle" /> {SBPS_SBPF2_LINES.length} lines · {peso(total)}
+            <i className="pi pi-info-circle" /> {lines.length} lines · {peso(total)}
           </span>
         </div>
 
@@ -66,10 +83,10 @@ export default function SBPF2Page() {
             </tr>
           </thead>
           <tbody>
-            {SBPS_SBPF2_LINES.map(l => {
+            {lines.map(l => {
               const acct = accountByCode(l.account)
               return (
-                <tr key={l.id}>
+                <tr key={l.id} onClick={() => setEditLine(l)} style={{ cursor: 'pointer' }}>
                   <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-3)' }}>{l.id}</td>
                   <td>
                     <div style={{ fontWeight: 600 }}>{l.desc}</div>
@@ -86,10 +103,10 @@ export default function SBPF2Page() {
                   <td className="amt">{pesoSm(l.amount)}</td>
                   <td>
                     <div className="row-actions" style={{ opacity: 1 }}>
-                      <button title="Edit" onClick={() => toast('Edit line.', 'pi-pencil')}>
+                      <button title="Edit" onClick={e => { e.stopPropagation(); setEditLine(l) }}>
                         <i className="pi pi-pencil" />
                       </button>
-                      <button title="Remove" onClick={() => toast('Line removed.', 'pi-trash')}>
+                      <button title="Remove" onClick={e => { e.stopPropagation(); handleRemove(l.id); toast('Line removed.', 'pi-trash') }}>
                         <i className="pi pi-trash" />
                       </button>
                     </div>
@@ -112,16 +129,16 @@ export default function SBPF2Page() {
         </table>
       </div>
 
+      {/* Account auto-suggest panel */}
       <div className="sec-head">
         <h2>Account Auto-Suggest</h2>
         <div className="meta">From the Revised Guide for Categories of Items</div>
       </div>
       <div className="panel" style={{ padding: 18 }}>
         <div style={{ fontSize: 13, color: 'var(--fg-2)', marginBottom: 14 }}>
-          Type a keyword to see how the system maps items to accounts.
-          The same logic runs as you fill new SBPF2 lines.
+          Type a keyword when adding a line — the drawer suggests the account code automatically.
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
           {ACCOUNT_HINTS.map(([kw, code]) => (
             <div key={kw} style={{ padding: '10px 12px', border: '1px solid rgb(var(--surface-200))', borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div style={{ fontWeight: 700, fontSize: 13 }}>{kw}</div>
@@ -132,6 +149,16 @@ export default function SBPF2Page() {
           ))}
         </div>
       </div>
+
+      {/* Edit / Add drawer */}
+      {editLine !== null && (
+        <SBPF2EditDrawer
+          line={editLine === 'new' ? null : editLine}
+          onClose={() => setEditLine(null)}
+          onSave={handleSave}
+          onRemove={handleRemove}
+        />
+      )}
     </>
   )
 }
